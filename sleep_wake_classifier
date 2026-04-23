@@ -1,0 +1,71 @@
+%% Predict New Data using KNN Classifier
+clear; close all; clc;
+
+%% 1. 加载分类器
+disp('=== Step 1: Load Classifier ===');
+if ~exist('classifier_params.mat', 'file')
+    error('classifier_params.mat not found! Please run train_classifier.m first.');
+end
+
+load('classifier_params.mat', 'classifier');
+fprintf('✓ 加载KNN分类器 (K=%d)\n', classifier.k_neighbors);
+fprintf('  训练日期: %s\n', classifier.training_date);
+fprintf('  窗口大小: %d秒\n', classifier.window_size);
+fprintf('  特征: %s\n', strjoin(classifier.feature_names, ', '));
+
+%% 2. 读取新数据
+disp('=== Step 2: Load New Data ===');
+file_path = input('Enter CSV file path: ', 's');
+new_data = readtable(file_path);
+
+time_data = new_data{:, 1};
+features_raw = new_data{:, 2:end};
+
+if size(features_raw, 2) ~= classifier.n_features
+    error('特征数量不匹配: 需要 %d 列，实际 %d 列', classifier.n_features, size(features_raw, 2));
+end
+
+%% 3. 窗口化
+disp('=== Step 3: Windowing ===');
+total_time = max(time_data) - min(time_data);
+n_windows = floor(total_time / classifier.window_size);
+
+window_edges = linspace(min(time_data), max(time_data), n_windows + 1);
+window_indices = discretize(time_data, window_edges);
+window_indices(isnan(window_indices)) = n_windows;
+
+window_raw = zeros(n_windows, classifier.n_features);
+for w = 1:n_windows
+    in_window = (window_indices == w);
+    if sum(in_window) > 0
+        window_raw(w, :) = max(features_raw(in_window, :), [], 1);
+    elseif w > 1
+        window_raw(w, :) = window_raw(w-1, :);
+    else
+        window_raw(w, :) = mean(features_raw, 1);
+    end
+end
+fprintf('✓ 生成 %d 个窗口\n', n_windows);
+
+%% 4. 分类
+disp('=== Step 4: Classification ===');
+labels = predict(classifier.model, window_raw);
+
+sleep_count = sum(labels == 1);
+wake_count = sum(labels == 2);
+fprintf('\n分类结果:\n');
+fprintf('  Sleep: %d 窗口 (%.1f%%)\n', sleep_count, sleep_count/n_windows*100);
+fprintf('  Wake: %d 窗口 (%.1f%%)\n', wake_count, wake_count/n_windows*100);
+
+%% 5. 保存结果
+original_labels = zeros(length(time_data), 1);
+for i = 1:length(time_data)
+    window_idx = window_indices(i);
+    original_labels(i) = labels(min(window_idx, end));
+end
+
+results = table(time_data, original_labels, 'VariableNames', {'Time', 'Cluster'});
+writetable(results, 'prediction_results.csv');
+fprintf('✓ 结果已保存: prediction_results.csv\n');
+
+fprintf('\n✅ 预测完成！\n');
