@@ -1,7 +1,6 @@
 # Zebrafish Physiological Data Clustering Analysis
 
-This repository contains the MATLAB code for clustering analysis of zebrafish physiological time-series data (heart rate, EMG, calcium activity). The code performs time-window feature extraction, K-means clustering (2 classes), PCA visualization, and exports cluster thresholds and original data with labels.
-
+A MATLAB-based KNN classifier for sleep-wake state classification in zebrafish using physiological time-series data (heart rate, EMG, calcium activity). The code performs time-window feature extraction, K-means clustering for pseudo-label generation, anchor-based label assignment, KNN classifier training, and 5-fold cross-validation.
 ## 1. System Requirements
 
 ### Operating Systems
@@ -27,32 +26,22 @@ This repository contains the MATLAB code for clustering analysis of zebrafish ph
 
 ### Instructions
 1. Download all code files into a single folder.
-2. Ensure the main script (e.g., `zebrafish_clustering.m`) is in your MATLAB path.
-3. No compilation or building is required – the code is interpreted MATLAB.
-
-### Typical install time
+2. Ensure the following files are in your MATLAB path:
+   - `zebrafish-sleep-wake-clustering.m` - Training script
+   - `sleep_wake_classifier.m` - Prediction script
+   - `classifier_params.mat` - Pre-trained classifier parameters
+3. No compilation or building is required – the code is interpreted MATLAB.### Typical install time
 - Less than 1 minute on a normal desktop computer.
 
 ## 4. Instructions for Use
-Running the code on your own data
+Running the prediction script code on your own data
 Prepare your CSV file with time in the first column and physiological signals in subsequent columns.
 
 Run the script and provide the file path when prompted.
-
-Set the time window size (in seconds) when asked. Default is 5 seconds.
 
 The script will automatically:
 
 Load and validate the data
 
-Extract window-wise maximum values
-
-Perform outlier replacement (only for calcium data, using 3×IQR)
-
-Standardize features (only for clustering; original values preserved in outputs)
-
-Run K-means clustering (k=2) with fixed random seed (42)
-
-Calculate cluster thresholds as the midpoint between cluster means
 
 Export all results
